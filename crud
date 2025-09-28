@@ -1,0 +1,267 @@
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Scanner;
+
+/**
+ * Objective: Menu-driven Java program for CRUD operations on a Product table 
+ * using JDBC, PreparedStatement, and transaction handling.
+ * NOTE: This program requires the MySQL Connector/J driver in the classpath.
+ */
+public class JdbcMySQLExample {
+
+    // --- JDBC Connection Details (Update these placeholders) ---
+    private static final String JDBC_DRIVER = "com.mysql.cj.jdbc.Driver";
+    private static final String DB_URL = "jdbc:mysql://localhost:3306/your_database_name";
+    private static final String USER = "your_username";
+    private static final String PASS = "your_password";
+    
+    private static final Scanner scanner = new Scanner(System.in);
+
+    // SQL Statements
+    private static final String CREATE_TABLE_SQL = 
+        "CREATE TABLE IF NOT EXISTS Product (" +
+        "ProductID INT PRIMARY KEY AUTO_INCREMENT," +
+        "ProductName VARCHAR(100) NOT NULL," +
+        "Price DOUBLE NOT NULL," +
+        "Quantity INT NOT NULL)";
+    
+    private static final String INSERT_SQL = 
+        "INSERT INTO Product (ProductName, Price, Quantity) VALUES (?, ?, ?)";
+    private static final String SELECT_ALL_SQL = 
+        "SELECT ProductID, ProductName, Price, Quantity FROM Product";
+    private static final String UPDATE_SQL = 
+        "UPDATE Product SET ProductName = ?, Price = ?, Quantity = ? WHERE ProductID = ?";
+    private static final String DELETE_SQL = 
+        "DELETE FROM Product WHERE ProductID = ?";
+
+
+    // --- CRUD Operation Methods ---
+
+    /**
+     * Creates a new product record using PreparedStatement and transaction.
+     */
+    private static void createProduct(Connection conn) throws SQLException {
+        conn.setAutoCommit(false); // Start transaction
+        try (PreparedStatement pstmt = conn.prepareStatement(INSERT_SQL)) {
+            
+            System.out.println("\n--- ADD NEW PRODUCT ---");
+            System.out.print("Enter Product Name: ");
+            String name = scanner.nextLine();
+            
+            System.out.print("Enter Price: ");
+            double price = Double.parseDouble(scanner.nextLine());
+            
+            System.out.print("Enter Quantity: ");
+            int quantity = Integer.parseInt(scanner.nextLine());
+            
+            pstmt.setString(1, name);
+            pstmt.setDouble(2, price);
+            pstmt.setInt(3, quantity);
+            
+            int rowsAffected = pstmt.executeUpdate();
+            
+            if (rowsAffected > 0) {
+                conn.commit(); // Commit transaction on success
+                System.out.println("SUCCESS: Product '" + name + "' added and committed to database.");
+            } else {
+                conn.rollback(); // Rollback on failure
+                System.out.println("FAILURE: Product addition failed. Rolling back changes.");
+            }
+            
+        } catch (Exception e) {
+            conn.rollback(); // Rollback on exception
+            System.err.println("ERROR: Creation failed. Rolling back. Details: " + e.getMessage());
+        } finally {
+            conn.setAutoCommit(true); // Restore default
+        }
+    }
+
+    /**
+     * Reads and displays all product records.
+     */
+    private static void readAllProducts(Connection conn) throws SQLException {
+        System.out.println("\n--- ALL PRODUCTS ---");
+        try (PreparedStatement pstmt = conn.prepareStatement(SELECT_ALL_SQL);
+             ResultSet rs = pstmt.executeQuery()) {
+            
+            System.out.println("----------------------------------------------------------------------");
+            System.out.printf("%-10s | %-25s | %-10s | %-10s\n", "ID", "Name", "Price", "Quantity");
+            System.out.println("----------------------------------------------------------------------");
+
+            boolean found = false;
+            while (rs.next()) {
+                found = true;
+                int id = rs.getInt("ProductID");
+                String name = rs.getString("ProductName");
+                double price = rs.getDouble("Price");
+                int quantity = rs.getInt("Quantity");
+                
+                System.out.printf("%-10d | %-25s | $%-9.2f | %-10d\n", id, name, price, quantity);
+            }
+            
+            if (!found) {
+                System.out.println("No products found in the table.");
+            }
+            System.out.println("----------------------------------------------------------------------");
+
+        }
+    }
+
+    /**
+     * Updates an existing product record using ProductID and transaction.
+     */
+    private static void updateProduct(Connection conn) throws SQLException {
+        conn.setAutoCommit(false); // Start transaction
+        try (PreparedStatement pstmt = conn.prepareStatement(UPDATE_SQL)) {
+            
+            System.out.println("\n--- UPDATE PRODUCT ---");
+            System.out.print("Enter Product ID to update: ");
+            int id = Integer.parseInt(scanner.nextLine());
+
+            System.out.print("Enter New Product Name: ");
+            String name = scanner.nextLine();
+            
+            System.out.print("Enter New Price: ");
+            double price = Double.parseDouble(scanner.nextLine());
+            
+            System.out.print("Enter New Quantity: ");
+            int quantity = Integer.parseInt(scanner.nextLine());
+
+            pstmt.setString(1, name);
+            pstmt.setDouble(2, price);
+            pstmt.setInt(3, quantity);
+            pstmt.setInt(4, id);
+            
+            int rowsAffected = pstmt.executeUpdate();
+            
+            if (rowsAffected > 0) {
+                conn.commit(); // Commit transaction on success
+                System.out.println("SUCCESS: Product ID " + id + " updated and committed.");
+            } else {
+                conn.rollback(); // Rollback if no rows were found/updated
+                System.out.println("FAILURE: Product ID " + id + " not found or update failed. Rolling back.");
+            }
+            
+        } catch (Exception e) {
+            conn.rollback(); // Rollback on exception
+            System.err.println("ERROR: Update failed. Rolling back. Details: " + e.getMessage());
+        } finally {
+            conn.setAutoCommit(true); // Restore default
+        }
+    }
+
+    /**
+     * Deletes a product record by ProductID with transaction handling.
+     */
+    private static void deleteProduct(Connection conn) throws SQLException {
+        conn.setAutoCommit(false); // Start transaction
+        try (PreparedStatement pstmt = conn.prepareStatement(DELETE_SQL)) {
+            
+            System.out.println("\n--- DELETE PRODUCT ---");
+            System.out.print("Enter Product ID to delete: ");
+            int id = Integer.parseInt(scanner.nextLine());
+            
+            pstmt.setInt(1, id);
+            
+            int rowsAffected = pstmt.executeUpdate();
+            
+            if (rowsAffected > 0) {
+                conn.commit(); // Commit transaction on success
+                System.out.println("SUCCESS: Product ID " + id + " deleted and committed.");
+            } else {
+                conn.rollback(); // Rollback if no rows were found/deleted
+                System.out.println("FAILURE: Product ID " + id + " not found. Rolling back.");
+            }
+            
+        } catch (Exception e) {
+            conn.rollback(); // Rollback on exception
+            System.err.println("ERROR: Deletion failed. Rolling back. Details: " + e.getMessage());
+        } finally {
+            conn.setAutoCommit(true); // Restore default
+        }
+    }
+    
+    /**
+     * Initializes the database connection and runs the menu loop.
+     */
+    public static void main(String[] args) {
+        
+        // 1. Load the JDBC Driver (Optional for modern JDBC but good practice for clarity)
+        try {
+            Class.forName(JDBC_DRIVER);
+        } catch (ClassNotFoundException e) {
+            System.err.println("ERROR: MySQL JDBC Driver not found. Ensure the connector JAR is in your classpath.");
+            e.printStackTrace();
+            return;
+        }
+
+        System.out.println("Attempting to connect to database...");
+
+        // 2. Establish Connection using Try-with-Resources
+        try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASS)) {
+            System.out.println("Connection successful. Running Product Manager.");
+            
+            // Ensure the Product table exists
+            try (PreparedStatement createStmt = conn.prepareStatement(CREATE_TABLE_SQL)) {
+                createStmt.execute();
+                System.out.println("Database setup complete: 'Product' table is ready.");
+            }
+
+            // 3. Main Menu Loop
+            boolean running = true;
+            while (running) {
+                System.out.println("\n====================================");
+                System.out.println("     PRODUCT CRUD MANAGER MENU");
+                System.out.println("====================================");
+                System.out.println("1. Create (Insert) Product");
+                System.out.println("2. Read (Display All) Products");
+                System.out.println("3. Update Product Details");
+                System.out.println("4. Delete Product");
+                System.out.println("5. Exit Application");
+                System.out.println("====================================");
+                System.out.print("Enter your choice (1-5): ");
+
+                try {
+                    int choice = Integer.parseInt(scanner.nextLine());
+
+                    switch (choice) {
+                        case 1:
+                            createProduct(conn);
+                            break;
+                        case 2:
+                            readAllProducts(conn);
+                            break;
+                        case 3:
+                            updateProduct(conn);
+                            break;
+                        case 4:
+                            deleteProduct(conn);
+                            break;
+                        case 5:
+                            running = false;
+                            System.out.println("Exiting Product Manager. Goodbye!");
+                            break;
+                        default:
+                            System.out.println("Invalid choice. Please enter a number between 1 and 5.");
+                    }
+                } catch (NumberFormatException e) {
+                    System.out.println("Invalid input. Please enter a numerical choice.");
+                }
+            }
+
+        } catch (SQLException e) {
+            // Handle common database errors (e.g., connection failed)
+            System.err.println("\nFATAL DATABASE ERROR OCCURRED:");
+            System.err.println("SQL State: " + e.getSQLState());
+            System.err.println("Error Code: " + e.getErrorCode());
+            System.err.println("Please check your DB_URL, USER, and PASS credentials.");
+            e.printStackTrace();
+        } finally {
+            // Close the scanner when the application ends
+            scanner.close();
+        }
+    }
+}
