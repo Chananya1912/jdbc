@@ -1,0 +1,151 @@
+import java.io.*;
+import java.util.Scanner;
+
+/**
+ * Menu-Based Employee Management System using Text File Handling.
+ * Allows users to add employee records and display all saved records.
+ * Records are stored persistently in "employees.txt".
+ * * Demonstrates: File I/O (PrintWriter, BufferedReader), error handling, and 
+ * structured user input management (Scanner).
+ */
+public class EmployeeManager {
+
+    private static final String FILE_NAME = "employees.txt";
+    // Use a single static Scanner for the application
+    private static final Scanner SCANNER = new Scanner(System.in);
+
+    public static void main(String[] args) {
+        boolean running = true;
+        System.out.println("--- Employee Management System ---");
+
+        while (running) {
+            displayMenu();
+            
+            // Check if the next input is an integer
+            if (SCANNER.hasNextInt()) {
+                int choice = SCANNER.nextInt();
+                SCANNER.nextLine(); // Consume the newline left by nextInt()
+                
+                try {
+                    switch (choice) {
+                        case 1:
+                            addEmployee();
+                            break;
+                        case 2:
+                            displayAllEmployees();
+                            break;
+                        case 3:
+                            running = false;
+                            System.out.println("Exiting application. Goodbye!");
+                            break;
+                        default:
+                            System.out.println("Invalid option. Please choose 1, 2, or 3.");
+                    }
+                } catch (IOException e) {
+                    System.err.println("A file I/O Error occurred: " + e.getMessage());
+                }
+            } else {
+                System.out.println("Invalid input. Please enter a number between 1 and 3.");
+                SCANNER.nextLine(); // Clear the bad input from the buffer
+            }
+            System.out.println("----------------------------------");
+        }
+        SCANNER.close();
+    }
+
+    private static void displayMenu() {
+        System.out.println("\nSelect an option:");
+        System.out.println("1. Add an Employee");
+        System.out.println("2. Display All Employees");
+        System.out.println("3. Exit the Application");
+        System.out.print("Enter choice: ");
+    }
+
+    /**
+     * Prompts the user for employee details and saves them as a formatted 
+     * comma-separated value (CSV) line in the file, appending to existing data.
+     */
+    private static void addEmployee() throws IOException {
+        System.out.print("Enter Employee Name: ");
+        String name = SCANNER.nextLine();
+        
+        System.out.print("Enter Employee ID (e.g., E101): ");
+        String id = SCANNER.nextLine();
+
+        System.out.print("Enter Designation: ");
+        String designation = SCANNER.nextLine();
+
+        // Robust input for salary
+        System.out.print("Enter Salary (e.g., 55000.50): ");
+        double salary = 0.0;
+        try {
+            salary = Double.parseDouble(SCANNER.nextLine());
+        } catch (NumberFormatException e) {
+            System.out.println("! Warning: Invalid salary format detected. Saving salary as 0.0.");
+        }
+
+
+        // File Handling: Use try-with-resources for automatic closing.
+        // FileWriter(FILE_NAME, true) ensures data is appended to the file.
+        try (FileWriter fw = new FileWriter(FILE_NAME, true);
+             BufferedWriter bw = new BufferedWriter(fw);
+             PrintWriter out = new PrintWriter(bw)) 
+        {
+            // Save data using a comma-separated format
+            String employeeRecord = String.format("%s,%s,%s,%.2f", id, name, designation, salary);
+            out.println(employeeRecord);
+            System.out.println("Success! Employee record added.");
+        }
+    }
+
+    /**
+     * Reads all employee records from the file line by line, parses the CSV data,
+     * and displays it in a clean, formatted table.
+     */
+    private static void displayAllEmployees() throws IOException {
+        File file = new File(FILE_NAME);
+        
+        // Check if the file exists and has content
+        if (!file.exists() || file.length() == 0) {
+            System.out.println("Status: No employee records found yet. File is empty or missing.");
+            return;
+        }
+
+        System.out.println("\n--- All Employee Records ---");
+        // Print header for the table
+        System.out.printf("%-10s %-20s %-15s %-12s%n", "ID", "NAME", "DESIGNATION", "SALARY");
+        System.out.println("----------------------------------------------------------");
+
+        // File Handling: Use BufferedReader for fast, line-by-line reading
+        try (FileReader fr = new FileReader(file);
+             BufferedReader br = new BufferedReader(fr)) 
+        {
+            String line;
+            // Read lines until the end of the file is reached (line becomes null)
+            while ((line = br.readLine()) != null) {
+                if (line.trim().isEmpty()) continue; // Skip any accidental empty lines
+                
+                // Efficient Data Processing: Split the CSV line into parts
+                String[] parts = line.split(",");
+                
+                if (parts.length == 4) {
+                    try {
+                        // Display the fields in a formatted table row
+                        String id = parts[0];
+                        String name = parts[1];
+                        String designation = parts[2];
+                        double salary = Double.parseDouble(parts[3]);
+
+                        System.out.printf("%-10s %-20s %-15s $%-11.2f%n", 
+                                          id, name, designation, salary);
+                    } catch (NumberFormatException e) {
+                        System.out.println("! Error: Corrupt salary data found for record: " + line);
+                    }
+                } else {
+                    System.out.println("! Error: Corrupt or incomplete record found: " + line);
+                }
+            }
+        }
+        System.out.println("----------------------------------------------------------");
+    }
+}
