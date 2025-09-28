@@ -1,0 +1,64 @@
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+
+/**
+ * Demonstrates Autoboxing, Unboxing, and String Parsing in Java.
+ * The program takes a line of space-separated integers as strings,
+ * converts them to Integer objects (autoboxing), stores them, and
+ * then calculates the sum using an enhanced for-loop (unboxing).
+ */
+public class AutoboxingSum {
+
+    public static void main(String[] args) {
+        // Use Scanner to get input from the user
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("--- Sum of Integers using Autoboxing/Unboxing ---");
+        System.out.println("Enter a list of integers, separated by spaces (e.g., 10 25 -5 100):");
+
+        // Read the entire line of input
+        String inputLine = scanner.nextLine();
+        scanner.close();
+
+        // Split the input line into an array of string tokens
+        String[] tokens = inputLine.trim().split("\\s+");
+        
+        // List to store the Integer objects (Wrapper Class)
+        // Primitive 'int' values will be automatically converted to 'Integer' objects (Autoboxing)
+        List<Integer> integerList = new ArrayList<>();
+        
+        System.out.println("\n--- Processing Input ---");
+        
+        // Convert and Autobox
+        for (String token : tokens) {
+            try {
+                // 1. String Parsing: Convert String token to primitive int
+                int number = Integer.parseInt(token);
+                
+                // 2. Autoboxing: Primitive 'int' is automatically wrapped into an 'Integer' object
+                integerList.add(number); 
+                System.out.println("Parsed and Autoboxed: " + number);
+                
+            } catch (NumberFormatException e) {
+                // Handle non-integer input gracefully
+                System.out.println("Skipping invalid input: " + token);
+            }
+        }
+
+        // Calculate the sum
+        long sum = 0; // Use long for safety in summation
+        
+        System.out.println("\n--- Calculating Sum ---");
+        System.out.println("Using enhanced for-loop for summation (triggers Unboxing):");
+        
+        // 3. Unboxing: Each 'Integer' object from the list is automatically
+        // converted back into a primitive 'int' to be added to 'sum'.
+        for (int value : integerList) {
+            sum += value;
+            System.out.println("  Adding: " + value);
+        }
+
+        // Display the final result
+        System.out.println("\nTotal Sum of Integers: " + sum);
+    }
+}
