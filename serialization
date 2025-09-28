@@ -1,0 +1,85 @@
+import java.io.*;
+
+/**
+ * Demonstrates Serialization and Deserialization of a custom Student object.
+ * The Student class implements the Serializable interface, allowing its 
+ * state (studentID, name, grade) to be persisted to and reconstructed from a file.
+ */
+public class SerializationDemo {
+
+    // 1. Create a Student class that implements the Serializable interface
+    static class Student implements Serializable {
+        // Recommended to include a serialVersionUID for version compatibility
+        private static final long serialVersionUID = 101L;
+
+        // Fields to be serialized
+        private final int studentID;
+        private final String name;
+        private final double grade;
+
+        public Student(int studentID, String name, double grade) {
+            this.studentID = studentID;
+            this.name = name;
+            this.grade = grade;
+        }
+
+        // Override toString to easily display the object's state
+        @Override
+        public String toString() {
+            return String.format(
+                "Student ID: %d, Name: %s, Grade: %.2f", 
+                studentID, name, grade
+            );
+        }
+    }
+
+    private static final String FILE_NAME = "student.ser";
+
+    public static void main(String[] args) {
+        // Original Student object to be serialized
+        Student originalStudent = new Student(202501, "Benjamin Sisko", 92.75);
+        System.out.println("Original Object Created:");
+        System.out.println("   " + originalStudent);
+
+        // --- PART 1: SERIALIZATION (Writing the object state to a file) ---
+        try (
+            // 2. Chain FileOutputStream (writes bytes to file) with ObjectOutputStream (writes objects)
+            FileOutputStream fileOut = new FileOutputStream(FILE_NAME);
+            ObjectOutputStream objectOut = new ObjectOutputStream(fileOut)
+        ) {
+            // Write the entire Student object to the stream
+            objectOut.writeObject(originalStudent);
+            System.out.println("\n--- Serialization Successful ---");
+            System.out.println("Object state saved to file: " + FILE_NAME);
+        } catch (IOException i) {
+            System.err.println("\nSerialization failed! Error: " + i.getMessage());
+            i.printStackTrace();
+            return; // Exit if persistence fails
+        }
+
+        // --- PART 2: DESERIALIZATION (Reading the object state back from the file) ---
+        Student deserializedStudent = null;
+        try (
+            // 3. Chain FileInputStream (reads bytes from file) with ObjectInputStream (reads objects)
+            FileInputStream fileIn = new FileInputStream(FILE_NAME);
+            ObjectInputStream objectIn = new ObjectInputStream(fileIn)
+        ) {
+            // Read the object and cast it back to the Student class
+            deserializedStudent = (Student) objectIn.readObject();
+            System.out.println("\n--- Deserialization Successful ---");
+        } catch (IOException | ClassNotFoundException c) {
+            // ClassNotFoundException handles cases where the class definition is missing
+            System.err.println("\nDeserialization failed! Error: " + c.getMessage());
+            c.printStackTrace();
+            return;
+        }
+
+        // Print the data of the new object to confirm successful reconstruction
+        System.out.println("Deserialized Object Retrieved:");
+        System.out.println("   " + deserializedStudent);
+        
+        // Confirmation: Demonstrate they are different instances in memory but hold the same data
+        System.out.println("\nConfirmation Check:");
+        System.out.println("Are they the same object instance? " + (originalStudent == deserializedStudent));
+    }
+}
