@@ -1,0 +1,79 @@
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
+
+/**
+ * Program demonstrating filtering, sorting, and mapping of Student objects 
+ * using Java 8 Stream API and Lambda expressions.
+ */
+public class StudentStreamProcessing {
+
+    /**
+     * Class representing a Student with name and marks.
+     */
+    static class Student {
+        private final String name;
+        private final double marks;
+
+        public Student(String name, double marks) {
+            this.name = name;
+            this.marks = marks;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public double getMarks() {
+            return marks;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("%-15s | Marks: %.2f", name, marks);
+        }
+    }
+
+    public static void main(String[] args) {
+        // 1. Initialize the List of Student objects
+        List<Student> students = new ArrayList<>();
+        students.add(new Student("Jane Doe", 88.5));
+        students.add(new Student("Alex Smith", 65.0)); // Will be filtered out
+        students.add(new Student("Sarah Connor", 78.2));
+        students.add(new Student("Kyle Reese", 95.9));
+        students.add(new Student("T-800", 75.0)); // Will be filtered out (not > 75)
+        students.add(new Student("John Henry", 88.5)); // Same marks as Jane
+
+        System.out.println("--- Initial Student Data ---");
+        students.forEach(System.out::println);
+
+        final double PASS_MARK = 75.0;
+
+        // ------------------------------------------------------------------
+        // Stream Operation: Filter, Sort, Map, and Display Names
+        // ------------------------------------------------------------------
+        System.out.println("\n--- Students Scoring > 75%, Sorted by Marks (Ascending) ---");
+        
+        List<String> highAchievers = students.stream()
+            // 2. Filter students where marks are strictly greater than 75.0
+            .filter(student -> student.getMarks() > PASS_MARK) 
+            
+            // 3. Sort the filtered students by their marks (Ascending order)
+            // Using a method reference (Student::getMarks) within Comparator.comparingDouble
+            .sorted(Comparator.comparingDouble(Student::getMarks)) 
+            
+            // 4. Map the stream of Student objects to a stream of String (names)
+            .map(Student::getName) 
+            
+            // 5. Collect the resulting names into a new List
+            .collect(Collectors.toList());
+
+        // Display the final results
+        highAchievers.forEach(name -> System.out.println("-> " + name));
+
+        // Optional: Demonstrate further sorting/displaying of the collected list if needed
+        System.out.println("\nTotal High Achievers: " + highAchievers.size());
+    }
+}
+streams
