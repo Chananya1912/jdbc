@@ -1,0 +1,99 @@
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+
+/**
+ * Demonstrates the use of lambda expressions for custom sorting of objects 
+ * using the List.sort() method.
+ */
+public class LambdaSortingDemo {
+
+    /**
+     * Inner class representing an Employee record.
+     */
+    static class Employee {
+        private final String name;
+        private final int age;
+        private final double salary;
+
+        public Employee(String name, int age, double salary) {
+            this.name = name;
+            this.age = age;
+            this.salary = salary;
+        }
+
+        // Getters are needed for comparator logic
+        public String getName() {
+            return name;
+        }
+
+        public int getAge() {
+            return age;
+        }
+
+        public double getSalary() {
+            return salary;
+        }
+
+        // Override toString for easy printing
+        @Override
+        public String toString() {
+            return String.format("%-15s | Age: %-3d | Salary: $%.2f", name, age, salary);
+        }
+    }
+
+    public static void main(String[] args) {
+        // Store multiple Employee objects in a List
+        List<Employee> employees = new ArrayList<>();
+        employees.add(new Employee("Alice Johnson", 34, 75000.00));
+        employees.add(new Employee("Bob Williams", 28, 92000.50));
+        employees.add(new Employee("Charlie Davis", 45, 61000.75));
+        employees.add(new Employee("David Miller", 28, 88000.00)); // Same age as Bob
+
+        System.out.println("--- Initial Employee List ---");
+        employees.forEach(System.out::println);
+
+        // ------------------------------------------------------------------
+        // 1. Sort by Name (Alphabetically - Ascending)
+        // ------------------------------------------------------------------
+        // Lambda Expression: (e1, e2) -> e1.getName().compareTo(e2.getName())
+        // This is concise: it takes two Employee objects (e1, e2) and returns the 
+        // result of comparing their names.
+        employees.sort((e1, e2) -> e1.getName().compareTo(e2.getName()));
+
+        System.out.println("\n--- Sorted by Name (A-Z) ---");
+        employees.forEach(System.out::println);
+
+
+        // ------------------------------------------------------------------
+        // 2. Sort by Age (Ascending)
+        // ------------------------------------------------------------------
+        // Using a more readable lambda with Comparator.comparingInt (recommended for primitives)
+        employees.sort(Comparator.comparingInt(Employee::getAge));
+
+        System.out.println("\n--- Sorted by Age (Ascending) ---");
+        employees.forEach(System.out::println);
+
+
+        // ------------------------------------------------------------------
+        // 3. Sort by Salary (Descending)
+        // ------------------------------------------------------------------
+        // Using Comparator.comparingDouble and then reversing the order.
+        employees.sort(Comparator.comparingDouble(Employee::getSalary).reversed());
+
+        System.out.println("\n--- Sorted by Salary (Descending) ---");
+        employees.forEach(System.out::println);
+        
+        
+        // ------------------------------------------------------------------
+        // Optional: Multi-level Sort (Age then Salary)
+        // ------------------------------------------------------------------
+        employees.sort(
+            Comparator.comparingInt(Employee::getAge) // Primary sort by Age
+                      .thenComparingDouble(Employee::getSalary).reversed() // Secondary sort by Salary (Descending)
+        );
+
+        System.out.println("\n--- Sorted by Age then Salary (Descending) ---");
+        employees.forEach(System.out::println);
+    }
+}
